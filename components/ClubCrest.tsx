@@ -1,13 +1,13 @@
-
 import React from 'react';
 import { CrestData } from '../types';
 
 interface Props {
   crest: CrestData;
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  className?: string;
 }
 
-const ClubCrest: React.FC<Props> = ({ crest, size = 'md' }) => {
+const ClubCrest: React.FC<Props> = ({ crest, size = 'md', className = '' }) => {
   const sizes = {
     sm: 'w-6 h-6',
     md: 'w-10 h-10',
@@ -69,7 +69,7 @@ const ClubCrest: React.FC<Props> = ({ crest, size = 'md' }) => {
   const maskId = `${shape.toLowerCase()}Mask`;
 
   return (
-    <div className={`${sizes[size]} relative flex items-center justify-center drop-shadow-xl`}>
+    <div className={`${sizes[size]} relative flex items-center justify-center drop-shadow-xl ${className}`}>
       <svg viewBox="0 0 100 100" className="w-full h-full">
         <defs>
           {renderShape(null)}

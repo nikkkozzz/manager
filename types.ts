@@ -95,7 +95,13 @@ export interface Match {
   events?: MatchEvent[];
 }
 
-export type ViewType = 'TACTICS' | 'LEAGUE' | 'SQUAD' | 'MARKET' | 'SCOUT' | 'NEGOTIATIONS' | 'TEAM_DETAIL' | 'TRAINING';
+export type ViewType = 'TACTICS' | 'LEAGUE' | 'SQUAD' | 'MARKET' | 'SCOUT' | 'NEGOTIATIONS' | 'TEAM_DETAIL' | 'TRAINING' | 'HISTORY' | 'FINANCES';
+
+export interface SeasonRecord {
+  seasonNumber: number;
+  champions: Record<number, string>;
+  pichichis: Record<number, { name: string; team: string; goals: number }>;
+}
 
 export interface LeagueState {
   week: number;
@@ -104,7 +110,9 @@ export interface LeagueState {
   freeAgents: Player[];
   calendar: Record<number, Match[][]>;
   negotiations: Negotiation[];
-  pendingAuctions: string[]; 
+  pendingAuctions: string[];
+  history: SeasonRecord[]; 
+  offers: Offer[];
 }
 
 export interface Offer {
@@ -116,12 +124,6 @@ export interface Offer {
   amount: number;
   playerAccepts: boolean;
   refusalReason?: string;
-}
-
-export interface SeasonRecord {
-  seasonNumber: number;
-  champions: Record<number, string>;
-  pichichis: Record<number, { name: string; team: string; goals: number }>;
 }
 
 export interface Bid {

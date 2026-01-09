@@ -58,10 +58,10 @@ const NegotiationModal: React.FC<Props> = ({ player, negotiation, onOfferToClub,
                     <p className="text-sm text-zinc-400 mb-6 leading-relaxed">Debes llegar a un acuerdo con el {player.team} antes de poder hablar con el jugador. Los clubes suelen pedir entre un 20% y un 50% extra por jugadores no transferibles.</p>
                     
                     <div className="space-y-2">
-                       <label className="text-[10px] font-black uppercase text-zinc-600">Monto del Traspaso (€)</label>
+                       <label className="text-[10px] font-black uppercase text-zinc-600">Oferta de Traspaso (€)</label>
                        <div className="flex gap-4">
                           <input 
-                            type="range" min={player.value * 0.5} max={player.value * 2} step={10000}
+                            type="range" min={Math.floor(player.value * 0.8)} max={player.value * 2.5} step={50000}
                             value={amount} onChange={(e) => setAmount(Number(e.target.value))}
                             className="flex-1 accent-emerald-500"
                           />
@@ -69,7 +69,7 @@ const NegotiationModal: React.FC<Props> = ({ player, negotiation, onOfferToClub,
                        </div>
                     </div>
                  </div>
-                 <button onClick={() => onOfferToClub(amount)} className="w-full bg-emerald-600 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-emerald-500">ENVIAR OFERTA AL CLUB</button>
+                 <button onClick={() => onOfferToClub(amount)} className="w-full bg-emerald-600 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-emerald-500 transition-colors">ENVIAR OFERTA AL CLUB</button>
               </div>
            ) : negotiation.status === 'PLAYER_NEGOTIATING' ? (
               <div className="space-y-6 animate-in slide-in-from-bottom duration-500">
@@ -99,14 +99,14 @@ const NegotiationModal: React.FC<Props> = ({ player, negotiation, onOfferToClub,
                        </div>
                     </div>
                  </div>
-                 <button onClick={() => onOfferToPlayer(bonus, role)} className="w-full bg-blue-600 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-blue-500">CERRAR CONTRATO</button>
+                 <button onClick={() => onOfferToPlayer(bonus, role)} className="w-full bg-blue-600 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-blue-500 transition-colors">OFRECER CONTRATO</button>
               </div>
            ) : (
               <div className="py-20 text-center space-y-4">
                  <p className="text-4xl">📝</p>
                  <h3 className="text-xl font-bold uppercase">{negotiation.status === 'AGREED' ? 'Traspaso Acordado' : 'Negociación Fallida'}</h3>
                  <p className="text-sm text-zinc-500 italic">"{negotiation.playerMessage}"</p>
-                 <button onClick={onClose} className="bg-zinc-800 px-8 py-2 rounded-xl text-xs font-bold mt-4">VOLVER AL MERCADO</button>
+                 <button onClick={onClose} className="bg-zinc-800 px-8 py-2 rounded-xl text-xs font-bold mt-4 hover:bg-zinc-700 transition-colors">VOLVER AL MERCADO</button>
               </div>
            )}
         </div>

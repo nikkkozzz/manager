@@ -1,17 +1,18 @@
 
 import React, { useState } from 'react';
-import { Player, Position } from '../types';
+import { Player, Position, Negotiation } from '../types';
 import { POSITION_COLORS } from '../constants';
 
 interface Props {
   players: Player[];
   budget: number;
   pendingAuctions: string[];
+  negotiations: Negotiation[];
   onBuy: (playerId: string) => void;
   onInspectPlayer?: (player: Player) => void;
 }
 
-const Market: React.FC<Props> = ({ players, budget, pendingAuctions, onBuy, onInspectPlayer }) => {
+const Market: React.FC<Props> = ({ players, budget, pendingAuctions, negotiations, onBuy, onInspectPlayer }) => {
   const [filterPos, setFilterPos] = useState<Position | 'ALL'>('ALL');
 
   const filteredPlayers = players.filter(p => filterPos === 'ALL' || p.pos === filterPos);
@@ -22,8 +23,8 @@ const Market: React.FC<Props> = ({ players, budget, pendingAuctions, onBuy, onIn
          <div className="flex gap-6 items-center">
             <div className="w-14 h-14 bg-amber-500/10 rounded-2xl flex items-center justify-center text-3xl shadow-inner border border-amber-500/10">⚖️</div>
             <div>
-               <h3 className="text-xl font-impact uppercase tracking-tighter text-zinc-100">Mercado de Transferencias Global</h3>
-               <p className="text-xs text-zinc-500 font-medium">Incluye Agentes Libres y jugadores listados por otros clubes.</p>
+               <h3 className="text-xl font-impact uppercase tracking-tighter text-zinc-100">Mercado de Fichajes</h3>
+               <p className="text-xs text-zinc-500 font-medium">Negocia directamente con clubes y agentes libres.</p>
             </div>
          </div>
          <div className="flex gap-2">
@@ -49,10 +50,10 @@ const Market: React.FC<Props> = ({ players, budget, pendingAuctions, onBuy, onIn
             const colors = POSITION_COLORS[p.pos];
             const isUserPlayer = p.team === 'Nikkko CF';
             const isFreeAgent = p.team === 'Libre';
-            const isPending = pendingAuctions.includes(p.id);
+            const activeNeg = negotiations.find(n => n.playerId === p.id);
 
             return (
-              <div key={p.id} className={`bg-zinc-900 border rounded-[2.5rem] p-7 hover:border-emerald-500/50 transition-all flex flex-col group relative overflow-hidden ${isUserPlayer ? 'border-amber-500/30' : isPending ? 'border-emerald-500 ring-4 ring-emerald-500/10 shadow-2xl shadow-emerald-900/20' : 'border-zinc-800'}`}>
+              <div key={p.id} className={`bg-zinc-900 border rounded-[2.5rem] p-7 hover:border-emerald-500/50 transition-all flex flex-col group relative overflow-hidden ${isUserPlayer ? 'border-amber-500/30' : activeNeg ? 'border-blue-500/50 ring-4 ring-blue-500/10' : 'border-zinc-800'}`}>
                 {isUserPlayer && (
                   <div className="absolute top-0 right-0 bg-amber-500 text-zinc-950 text-[8px] font-black uppercase px-5 py-1.5 rotate-45 translate-x-4 translate-y-3 shadow-lg">Tu Jugador</div>
                 )}
@@ -79,20 +80,27 @@ const Market: React.FC<Props> = ({ players, budget, pendingAuctions, onBuy, onIn
 
                 <div className="mt-auto space-y-4">
                   <div className="flex justify-between items-center bg-zinc-950/50 p-4 rounded-2xl border border-zinc-800 shadow-inner">
-                    <span className="text-zinc-600 text-[9px] uppercase font-black tracking-widest">Precio Salida</span>
+                    <span className="text-zinc-600 text-[9px] uppercase font-black tracking-widest">Valor</span>
                     <span className="text-emerald-400 font-impact text-lg">{p.value.toLocaleString()}€</span>
                   </div>
                   
                   {isUserPlayer ? (
                     <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl text-center">
-                       <p className="text-[10px] text-amber-500 font-black uppercase tracking-widest">Tu jugador está en venta</p>
+                       <p className="text-[10px] text-amber-500 font-black uppercase tracking-widest">En venta</p>
                     </div>
+                  ) : activeNeg ? (
+                     <button 
+                      onClick={() => onBuy(p.id)}
+                      className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95 bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/20`}
+                    >
+                      VER NEGOCIACIÓN
+                    </button>
                   ) : (
                     <button 
                       onClick={() => onBuy(p.id)}
-                      className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95 ${isPending ? 'bg-red-600 hover:bg-red-500 text-white shadow-red-900/20' : budget >= p.value ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/20' : 'bg-zinc-800 text-zinc-600 cursor-not-allowed border border-zinc-700'}`}
+                      className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95 ${budget >= p.value ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/20' : 'bg-zinc-800 text-zinc-600 cursor-not-allowed border border-zinc-700'}`}
                     >
-                      {isPending ? 'RECITAR INTERÉS' : budget >= p.value ? 'ENTRAR EN SUBASTA' : 'SALDO INSUFICIENTE'}
+                      {budget >= p.value ? 'OFERTAR AL CLUB' : 'SALDO INSUFICIENTE'}
                     </button>
                   )}
                 </div>

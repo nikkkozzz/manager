@@ -123,18 +123,21 @@ export const createTeam = (name: string, division: number, isUser: boolean = fal
     }
   };
 
-  const sorted = [...squad].sort((a, b) => b.tsi - a.tsi);
-  
-  const starterPositions = ["POR", "LTI", "DCI", "DCD", "LTD", "EIZ", "MCI", "MCD", "EDE", "DI", "DD"];
-  starterPositions.forEach((pos, i) => {
-    team.lineup[pos] = sorted[i].id;
-    sorted[i].currentRole = pos;
-  });
+  // Only auto-fill lineup for AI teams. User starts with empty tactics board.
+  if (!isUser) {
+    const sorted = [...squad].sort((a, b) => b.tsi - a.tsi);
+    
+    const starterPositions = ["POR", "LTI", "DCI", "DCD", "LTD", "EIZ", "MCI", "MCD", "EDE", "DI", "DD"];
+    starterPositions.forEach((pos, i) => {
+        team.lineup[pos] = sorted[i].id;
+        sorted[i].currentRole = pos;
+    });
 
-  for (let i = 11; i < 18; i++) {
-    const subPos = `S${i - 10}`;
-    team.lineup[subPos] = sorted[i].id;
-    sorted[i].currentRole = subPos;
+    for (let i = 11; i < 18; i++) {
+        const subPos = `S${i - 10}`;
+        team.lineup[subPos] = sorted[i].id;
+        sorted[i].currentRole = subPos;
+    }
   }
 
   return team;

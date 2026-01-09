@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Match, MatchEvent, EventType } from '../types';
+import { Match, MatchEvent, EventType, Team } from '../types';
 import { GOAL_COMMS } from '../constants';
 import ClubCrest from './ClubCrest';
 
@@ -24,13 +24,24 @@ const MatchSimulator: React.FC<Props> = ({ match, onComplete }) => {
     const timer = setTimeout(() => {
       setMinute(m => m + 1);
 
-      const getPower = (team: any) => team.squad.reduce((sum: number, p: any) => {
-        const fatiguePenalty = p.fatigue > 70 ? (1 - (p.fatigue - 70) / 100) : 1;
-        return sum + (p.h_anotacion * fatiguePenalty);
-      }, 0);
+      // Helper to calculate power of the Starting XI
+      const getPower = (team: Team) => {
+        // Extract IDs of players in starter positions (excluding bench 'S1', 'S2' etc)
+        const starterIds = Object.entries(team.lineup)
+          .filter(([role, id]) => id && !role.startsWith('S'))
+          .map(([_, id]) => id);
 
-      const locPower = getPower(match.loc);
-      const visPower = getPower(match.vis);
+        return team.squad
+          .filter(p => starterIds.includes(p.id))
+          .reduce((sum: number, p: any) => {
+            const fatiguePenalty = p.fatigue > 70 ? (1 - (p.fatigue - 70) / 100) : 1;
+            // Weighted calculation: Goalkeepers contribute less to attacking power generally, but we keep simple sum for now
+            return sum + (p.h_anotacion * fatiguePenalty);
+          }, 0);
+      };
+
+      const locPower = getPower(match.loc) || 10; // Fallback to avoid division by zero
+      const visPower = getPower(match.vis) || 10;
       const totalPower = locPower + visPower;
 
       const randomRoll = Math.random();
@@ -41,34 +52,60 @@ const MatchSimulator: React.FC<Props> = ({ match, onComplete }) => {
         const isLoc = Math.random() < (locPower / totalPower);
         const attackingTeam = isLoc ? match.loc : match.vis;
         const defendingTeam = isLoc ? match.vis : match.loc;
-        const attackers = attackingTeam.squad.filter(p => ['DEL', 'MED'].includes(p.pos));
-        const player = attackers[Math.floor(Math.random() * attackers.length)];
+        
+        // Find players who are actually playing
+        const starterIds = Object.entries(attackingTeam.lineup)
+          .filter(([role, id]) => id && !role.startsWith('S'))
+          .map(([_, id]) => id);
+        
+        const activeSquad = attackingTeam.squad.filter(p => starterIds.includes(p.id));
+        const attackers = activeSquad.filter(p => ['DEL', 'MED'].includes(p.pos));
+        const player = attackers.length > 0 
+           ? attackers[Math.floor(Math.random() * attackers.length)] 
+           : activeSquad[Math.floor(Math.random() * activeSquad.length)]; // Fallback if no attackers
 
-        const goalRoll = Math.random();
-        if (goalRoll < 0.25) { 
-          setScore(s => isLoc ? [s[0] + 1, s[1]] : [s[0], s[1] + 1]);
-          addEvent(currentMinute, `¡GOOOOOOL de ${player.name}! ${GOAL_COMMS[Math.floor(Math.random() * GOAL_COMMS.length)]}`, 'goal');
-          player.goals += 1;
-        } else if (goalRoll < 0.55) { 
-          const keeper = defendingTeam.squad.find(p => p.pos === 'POR') || defendingTeam.squad[0];
-          addEvent(currentMinute, `¡PARADÓN de ${keeper.name}! Evita el tanto de ${player.name} con una estirada increíble.`, 'save');
-        } else { 
-          addEvent(currentMinute, `Ocasión clara para ${player.name}... ¡el balón se va rozando el poste!`, 'chance');
+        if (player) {
+          const goalRoll = Math.random();
+          if (goalRoll < 0.25) { 
+            setScore(s => isLoc ? [s[0] + 1, s[1]] : [s[0], s[1] + 1]);
+            addEvent(currentMinute, `¡GOOOOOOL de ${player.name}! ${GOAL_COMMS[Math.floor(Math.random() * GOAL_COMMS.length)]}`, 'goal');
+            player.goals += 1;
+          } else if (goalRoll < 0.55) { 
+            const keeperId = defendingTeam.lineup['POR'];
+            const keeper = defendingTeam.squad.find(p => p.id === keeperId) || defendingTeam.squad[0];
+            addEvent(currentMinute, `¡PARADÓN de ${keeper.name}! Evita el tanto de ${player.name} con una estirada increíble.`, 'save');
+          } else { 
+            addEvent(currentMinute, `Ocasión clara para ${player.name}... ¡el balón se va rozando el poste!`, 'chance');
+          }
         }
       }
       else if (randomRoll < 0.10) {
         const team = Math.random() > 0.5 ? match.loc : match.vis;
-        const player = team.squad[Math.floor(Math.random() * team.squad.length)];
-        if (Math.random() > 0.15) {
-          addEvent(currentMinute, `Tarjeta Amarilla para ${player.name} por una entrada a destiempo.`, 'yellow');
-        } else {
-          addEvent(currentMinute, `¡TARJETA ROJA! ${player.name} es expulsado tras una falta violenta.`, 'red');
+        // Only target players on the pitch
+        const starterIds = Object.entries(team.lineup)
+          .filter(([role, id]) => id && !role.startsWith('S'))
+          .map(([_, id]) => id);
+        const activeSquad = team.squad.filter(p => starterIds.includes(p.id));
+        const player = activeSquad[Math.floor(Math.random() * activeSquad.length)];
+        
+        if (player) {
+            if (Math.random() > 0.15) {
+              addEvent(currentMinute, `Tarjeta Amarilla para ${player.name} por una entrada a destiempo.`, 'yellow');
+            } else {
+              addEvent(currentMinute, `¡TARJETA ROJA! ${player.name} es expulsado tras una falta violenta.`, 'red');
+            }
         }
       }
       else if (randomRoll < 0.105) {
         const team = Math.random() > 0.5 ? match.loc : match.vis;
-        const player = team.squad[Math.floor(Math.random() * team.squad.length)];
-        addEvent(currentMinute, `Atención médica en el campo: ${player.name} parece haberse lesionado solo.`, 'injury');
+        const starterIds = Object.entries(team.lineup)
+          .filter(([role, id]) => id && !role.startsWith('S'))
+          .map(([_, id]) => id);
+        const activeSquad = team.squad.filter(p => starterIds.includes(p.id));
+        const player = activeSquad[Math.floor(Math.random() * activeSquad.length)];
+        if (player) {
+           addEvent(currentMinute, `Atención médica en el campo: ${player.name} parece haberse lesionado solo.`, 'injury');
+        }
       }
 
     }, 80);
