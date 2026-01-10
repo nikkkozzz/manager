@@ -35,6 +35,8 @@ const RIVAL_NAMES = [
   ["Oceanic Blue", 3], ["Titanium FC", 3], ["Obsidian United", 3]
 ];
 
+const SAVE_KEY = 'mb_manager_save_v1';
+
 const App: React.FC = () => {
   const [view, setView] = useState<ViewType>('TACTICS');
   const [league, setLeague] = useState<LeagueState | null>(null);
@@ -45,7 +47,31 @@ const App: React.FC = () => {
   const [inspectedMatch, setInspectedMatch] = useState<Match | null>(null);
   const [financialReport, setFinancialReport] = useState<{ticketIncome: number, sponsorIncome: number, attendance: number, capacity: number, isHome: boolean, total: number} | null>(null);
 
+  // Load game on mount
   useEffect(() => {
+    const savedGame = localStorage.getItem(SAVE_KEY);
+    if (savedGame) {
+      try {
+        const parsedState = JSON.parse(savedGame);
+        setLeague(parsedState);
+        return;
+      } catch (e) {
+        console.error("Error loading save file", e);
+      }
+    }
+
+    // New Game Logic if no save found
+    initializeNewGame();
+  }, []);
+
+  // Save game whenever league state changes
+  useEffect(() => {
+    if (league) {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(league));
+    }
+  }, [league]);
+
+  const initializeNewGame = () => {
     const userTeam = createTeam("Nikkko CF", 3, true);
     const rivals = RIVAL_NAMES.map(([n, d]) => createTeam(n as string, d as number));
     const allTeams = [userTeam, ...rivals];
@@ -63,7 +89,15 @@ const App: React.FC = () => {
       history: [],
       offers: []
     });
-  }, []);
+    setView('TACTICS');
+  };
+
+  const handleResetGame = () => {
+    if (window.confirm("¿Estás seguro de que quieres borrar tu partida y empezar de nuevo? Esta acción no se puede deshacer.")) {
+      localStorage.removeItem(SAVE_KEY);
+      initializeNewGame();
+    }
+  };
 
   const userTeam = useMemo(() => league?.teams.find(t => t.isUser) || null, [league]);
 
@@ -439,6 +473,12 @@ const App: React.FC = () => {
             <span className="text-zinc-600 font-bold uppercase">Presupuesto</span>
             <span className="text-emerald-400 font-mono font-bold">{userTeam?.budget.toLocaleString()}€</span>
           </div>
+          <button 
+            onClick={handleResetGame}
+            className="w-full mt-4 bg-zinc-900 text-zinc-600 hover:bg-red-950 hover:text-red-500 text-[9px] font-black uppercase py-2 rounded-lg transition-colors border border-zinc-800 hover:border-red-900"
+          >
+            Reiniciar Partida
+          </button>
         </div>
       </aside>
 
