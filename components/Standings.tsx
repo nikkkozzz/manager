@@ -44,10 +44,14 @@ const Standings: React.FC<Props> = ({ league, currentDiv, onSelectTeam, onInspec
 
   const fixturesByWeek = useMemo(() => {
     const weekIdx = viewedWeek - 1;
+    if (!league.calendar || !league.calendar[selectedDiv]) return [];
     return league.calendar[selectedDiv][weekIdx] || [];
   }, [league.calendar, selectedDiv, viewedWeek]);
 
-  const totalWeeks = league.calendar[selectedDiv]?.length || 0;
+  const totalWeeks = useMemo(() => {
+    if (!league.calendar || !league.calendar[selectedDiv]) return 0;
+    return league.calendar[selectedDiv].length;
+  }, [league.calendar, selectedDiv]);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -90,8 +94,8 @@ const Standings: React.FC<Props> = ({ league, currentDiv, onSelectTeam, onInspec
                 <tr key={t.id} className={`border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors ${t.isUser ? 'bg-emerald-500/5' : ''}`}>
                   <td className="py-4 px-6 text-center font-bold text-zinc-500">{i + 1}</td>
                   <td className="py-4">
-                    <button onClick={() => onSelectTeam(t.id)} className="group flex items-center gap-4 text-left font-bold">
-                      <ClubCrest crest={t.crest} size="sm" />
+                    <button onClick={() => onSelectTeam(t.id)} className="group flex items-center gap-4 text-left font-bold w-full">
+                      {t.crest && <ClubCrest crest={t.crest} size="sm" />}
                       <div className="flex flex-col">
                         <span className="group-hover:text-emerald-400">{t.name}</span>
                         {t.isUser && <span className="text-[7px] bg-emerald-500 text-zinc-950 px-1 py-0.5 rounded font-black uppercase w-fit">Tu Club</span>}
@@ -104,6 +108,13 @@ const Standings: React.FC<Props> = ({ league, currentDiv, onSelectTeam, onInspec
                   <td className="py-4 text-center px-6 font-black font-mono text-base">{t.pts}</td>
                 </tr>
               ))}
+              {sortedTeams.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="py-20 text-center text-zinc-600 font-bold uppercase tracking-widest">
+                    No hay equipos en esta división.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         )}
@@ -134,23 +145,23 @@ const Standings: React.FC<Props> = ({ league, currentDiv, onSelectTeam, onInspec
                     onClick={() => m.played && onInspectMatch(m)}
                     className={`bg-zinc-950 p-6 rounded-3xl border border-zinc-800 flex items-center justify-between transition-all ${m.played ? 'hover:bg-zinc-900 hover:border-emerald-500/50 cursor-pointer' : 'opacity-80 cursor-default'}`}
                   >
-                     <div className="flex items-center gap-3 flex-1">
-                        <ClubCrest crest={m.loc.crest} size="sm" />
+                     <div className="flex items-center gap-3 flex-1 overflow-hidden">
+                        {m.loc.crest && <ClubCrest crest={m.loc.crest} size="sm" />}
                         <span className="text-sm font-bold truncate">{m.loc.name}</span>
                      </div>
-                     <div className="flex items-center gap-4 bg-zinc-900 px-6 py-2 rounded-2xl border border-zinc-800 mx-4">
+                     <div className="flex items-center gap-4 bg-zinc-900 px-6 py-2 rounded-2xl border border-zinc-800 mx-4 shrink-0">
                         <span className={`text-xl font-impact ${m.played ? 'text-white' : 'text-zinc-700'}`}>{m.played ? m.score[0] : '-'}</span>
                         <span className="text-zinc-800 font-bold">:</span>
                         <span className={`text-xl font-impact ${m.played ? 'text-white' : 'text-zinc-700'}`}>{m.played ? m.score[1] : '-'}</span>
                      </div>
-                     <div className="flex items-center gap-3 flex-1 justify-end">
+                     <div className="flex items-center gap-3 flex-1 justify-end overflow-hidden">
                         <span className="text-sm font-bold truncate text-right">{m.vis.name}</span>
-                        <ClubCrest crest={m.vis.crest} size="sm" />
+                        {m.vis.crest && <ClubCrest crest={m.vis.crest} size="sm" />}
                      </div>
                   </button>
                 ))}
              </div>
-             {viewedWeek < league.week && <p className="text-center text-[10px] text-zinc-600 font-bold uppercase tracking-widest">Pinchen en un resultado para ver los detalles del encuentro</p>}
+             {viewedWeek < league.week && <p className="text-center text-[10px] text-zinc-600 font-bold uppercase tracking-widest">Haz clic en un partido para ver los detalles del encuentro</p>}
           </div>
         )}
 
@@ -176,13 +187,20 @@ const Standings: React.FC<Props> = ({ league, currentDiv, onSelectTeam, onInspec
                   </td>
                   <td className="py-4">
                     <div className="flex items-center gap-2">
-                      <ClubCrest crest={p.teamCrest} size="sm" />
+                      {p.teamCrest && <ClubCrest crest={p.teamCrest} size="sm" />}
                       <span className="text-zinc-400 font-bold text-xs">{p.teamName}</span>
                     </div>
                   </td>
                   <td className="py-4 text-center px-6 font-impact text-2xl text-emerald-400">{p.goals}</td>
                 </tr>
               ))}
+              {topScorers.length === 0 && (
+                 <tr>
+                   <td colSpan={4} className="py-20 text-center text-zinc-600 font-bold uppercase tracking-widest">
+                     No hay goles registrados todavía.
+                   </td>
+                 </tr>
+              )}
             </tbody>
           </table>
         )}

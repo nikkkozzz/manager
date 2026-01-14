@@ -16,6 +16,8 @@ const ClubCrest: React.FC<Props> = ({ crest, size = 'md', className = '' }) => {
   };
 
   const { primaryColor, secondaryColor, pattern, shape, symbol } = crest;
+  const gradientId = `grad-${primaryColor.replace('#', '')}`;
+  const glossId = `gloss-${primaryColor.replace('#', '')}`;
 
   const renderPattern = () => {
     switch (pattern) {
@@ -28,73 +30,97 @@ const ClubCrest: React.FC<Props> = ({ crest, size = 'md', className = '' }) => {
           </g>
         );
       case 'DIAGONAL':
-        return <polygon points="0,0 100,100 0,100" fill={secondaryColor} />;
+        return <polygon points="0,0 100,100 0,100" fill={secondaryColor} opacity="0.6" />;
       case 'CROSS':
         return (
-          <g>
-            <rect x="40" y="0" width="20" height="100" fill={secondaryColor} />
-            <rect x="0" y="40" width="100" height="20" fill={secondaryColor} />
+          <g opacity="0.6">
+            <rect x="42" y="0" width="16" height="100" fill={secondaryColor} />
+            <rect x="0" y="42" width="100" height="16" fill={secondaryColor} />
           </g>
         );
       case 'CHEVRON':
-        return <polygon points="0,0 50,50 100,0 100,30 50,80 0,30" fill={secondaryColor} />;
+        return <polygon points="0,0 50,40 100,0 100,30 50,70 0,30" fill={secondaryColor} opacity="0.6" />;
+      case 'CHECKERED':
+        return (
+          <g opacity="0.4">
+            <rect x="0" y="0" width="50" height="50" fill={secondaryColor} />
+            <rect x="50" y="50" width="50" height="50" fill={secondaryColor} />
+          </g>
+        );
+      case 'STARS':
+        return (
+          <g fill={secondaryColor} opacity="0.3">
+             <circle cx="20" cy="20" r="3" /><circle cx="80" cy="20" r="3" />
+             <circle cx="20" cy="80" r="3" /><circle cx="80" cy="80" r="3" />
+             <circle cx="50" cy="50" r="3" />
+          </g>
+        );
       default:
         return null;
     }
   };
 
-  const renderShape = (content: React.ReactNode) => {
+  const renderShapePath = () => {
     switch (shape) {
       case 'CIRCLE':
-        return (
-          <mask id="circleMask">
-            <circle cx="50" cy="50" r="50" fill="white" />
-          </mask>
-        );
+        return <circle cx="50" cy="50" r="50" />;
       case 'DIAMOND':
-        return (
-          <mask id="diamondMask">
-            <polygon points="50,0 100,50 50,100 0,50" fill="white" />
-          </mask>
-        );
+        return <polygon points="50,0 100,50 50,100 0,50" />;
+      case 'HEXAGON':
+        return <polygon points="25,5 75,5 100,50 75,95 25,95 0,50" />;
+      case 'SQUARE':
+        return <rect x="5" y="5" width="90" height="90" rx="10" />;
       default: // SHIELD
-        return (
-          <mask id="shieldMask">
-            <path d="M10,0 L90,0 L90,60 C90,85 50,100 50,100 C50,100 10,85 10,60 Z" fill="white" />
-          </mask>
-        );
+        return <path d="M10,0 L90,0 L90,60 C90,85 50,100 50,100 C50,100 10,85 10,60 Z" />;
     }
   };
 
-  const maskId = `${shape.toLowerCase()}Mask`;
-
   return (
-    <div className={`${sizes[size]} relative flex items-center justify-center drop-shadow-xl ${className}`}>
+    <div className={`${sizes[size]} relative flex items-center justify-center drop-shadow-2xl ${className}`}>
       <svg viewBox="0 0 100 100" className="w-full h-full">
         <defs>
-          {renderShape(null)}
+          <linearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style={{ stopColor: primaryColor, stopOpacity: 1 }} />
+            <stop offset="100%" style={{ stopColor: primaryColor, stopOpacity: 0.8 }} />
+          </linearGradient>
+          
+          <linearGradient id={glossId} x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style={{ stopColor: 'white', stopOpacity: 0.4 }} />
+            <stop offset="50%" style={{ stopColor: 'white', stopOpacity: 0 }} />
+          </linearGradient>
+
+          <clipPath id={`clip-${gradientId}`}>
+            {renderShapePath()}
+          </clipPath>
+          
+          <filter id="shadow">
+            <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity="0.5"/>
+          </filter>
         </defs>
         
-        {/* Background Layer */}
-        <g mask={`url(#${maskId})`}>
-          <rect x="0" y="0" width="100" height="100" fill={primaryColor} />
+        {/* Background con Degradado */}
+        <g clipPath={`url(#clip-${gradientId})`}>
+          <rect x="0" y="0" width="100" height="100" fill={`url(#${gradientId})`} />
           {renderPattern()}
+          
+          {/* Capa de Brillo Superior (Glossy) */}
+          <rect x="0" y="0" width="100" height="50" fill={`url(#${glossId})`} />
         </g>
 
-        {/* Border / Outline */}
-        {shape === 'CIRCLE' && <circle cx="50" cy="50" r="48" fill="none" stroke="white" strokeWidth="4" opacity="0.3" />}
-        {shape === 'DIAMOND' && <polygon points="50,2 98,50 50,98 2,50" fill="none" stroke="white" strokeWidth="4" opacity="0.3" />}
-        {shape === 'SHIELD' && <path d="M10,2 L90,2 L90,60 C90,84 50,98 50,98 C50,98 10,84 10,60 Z" fill="none" stroke="white" strokeWidth="4" opacity="0.3" />}
+        {/* Borde de la forma */}
+        <g fill="none" stroke="white" strokeWidth="3" opacity="0.3">
+           {renderShapePath()}
+        </g>
 
-        {/* Center Symbol */}
+        {/* Símbolo Central con Sombra */}
         <text 
           x="50" 
-          y="55" 
-          fontSize="40" 
+          y="56" 
+          fontSize="44" 
           textAnchor="middle" 
           dominantBaseline="middle" 
-          className="select-none"
-          style={{ filter: 'drop-shadow(0px 2px 2px rgba(0,0,0,0.5))' }}
+          filter="url(#shadow)"
+          className="select-none pointer-events-none"
         >
           {symbol}
         </text>

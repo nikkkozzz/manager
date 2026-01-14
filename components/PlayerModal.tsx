@@ -6,14 +6,14 @@ import { POSITION_COLORS } from '../constants';
 interface Props {
   player: Player;
   onClose: () => void;
+  onOffer?: (player: Player) => void;
+  isUserPlayer?: boolean;
+  isAlreadyNegotiating?: boolean;
 }
 
-const PlayerModal: React.FC<Props> = ({ player, onClose }) => {
+const PlayerModal: React.FC<Props> = ({ player, onClose, onOffer, isUserPlayer, isAlreadyNegotiating }) => {
   const colors = POSITION_COLORS[player.pos];
   
-  const minVal = Math.floor(player.value * 0.95);
-  const maxVal = Math.floor(player.value * 1.15);
-
   const stats = [
     { label: 'Portería', val: player.h_porteria, color: 'text-yellow-400', bg: 'bg-yellow-500/20' },
     { label: 'Defensa', val: player.h_defensa, color: 'text-blue-400', bg: 'bg-blue-500/20' },
@@ -28,10 +28,10 @@ const PlayerModal: React.FC<Props> = ({ player, onClose }) => {
       if (player.personality === 'AMBICIOSO') reasons.push("Descontento por ser suplente.");
       if (player.personality === 'LEAL') reasons.push("Acepta su rol de suplente por amor al club.");
     }
-    // Lógica simple de posición (esto debería venir del estado global en una app real)
-    // Pero aquí simulamos el análisis
     return reasons.length > 0 ? reasons : ["Situación estable en el club."];
   };
+
+  const canOffer = !isUserPlayer && (player.isTransferListed || player.team === 'Libre');
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-300">
@@ -59,7 +59,6 @@ const PlayerModal: React.FC<Props> = ({ player, onClose }) => {
         </div>
 
         <div className="p-8 space-y-6">
-          {/* Carácter y Moral */}
           <div className="grid grid-cols-2 gap-4">
              <div className="bg-zinc-950 p-5 rounded-3xl border border-zinc-800">
                 <p className="text-[9px] text-zinc-500 uppercase font-black mb-2 tracking-widest">Personalidad</p>
@@ -95,7 +94,6 @@ const PlayerModal: React.FC<Props> = ({ player, onClose }) => {
              </ul>
           </div>
 
-          {/* Bloque de Atributos */}
           <div className="grid grid-cols-4 gap-3">
             {stats.map(s => (
               <div key={s.label} className="bg-zinc-950 p-3 rounded-2xl border border-zinc-800 text-center">
@@ -117,12 +115,23 @@ const PlayerModal: React.FC<Props> = ({ player, onClose }) => {
             </div>
           </div>
 
-          <button 
-            onClick={onClose}
-            className="w-full py-4 bg-zinc-100 hover:bg-white text-zinc-950 font-black rounded-2xl uppercase tracking-widest text-xs transition-all shadow-xl"
-          >
-            Cerrar Expediente
-          </button>
+          <div className="flex gap-3 mt-4">
+            {canOffer && (
+              <button 
+                onClick={() => onOffer?.(player)}
+                disabled={isAlreadyNegotiating}
+                className={`flex-1 py-4 font-black rounded-2xl uppercase tracking-widest text-xs transition-all shadow-xl ${isAlreadyNegotiating ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/40 active:scale-95'}`}
+              >
+                {isAlreadyNegotiating ? 'Negociación en curso' : 'Iniciar Negociación'}
+              </button>
+            )}
+            <button 
+              onClick={onClose}
+              className={`${canOffer ? 'w-1/3' : 'w-full'} py-4 bg-zinc-100 hover:bg-white text-zinc-950 font-black rounded-2xl uppercase tracking-widest text-xs transition-all shadow-xl`}
+            >
+              Cerrar
+            </button>
+          </div>
         </div>
       </div>
     </div>

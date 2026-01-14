@@ -63,9 +63,33 @@ export interface Player {
 export interface CrestData {
   primaryColor: string;
   secondaryColor: string;
-  pattern: 'STRIPES' | 'DIAGONAL' | 'CROSS' | 'PLAIN' | 'CHEVRON';
-  shape: 'SHIELD' | 'CIRCLE' | 'DIAMOND';
+  // Fix: Added 'CHECKERED' and 'STARS' to support patterns used in utils.ts and ClubCrest.tsx
+  pattern: 'STRIPES' | 'DIAGONAL' | 'CROSS' | 'PLAIN' | 'CHEVRON' | 'CHECKERED' | 'STARS';
+  // Fix: Added 'HEXAGON' and 'SQUARE' to support shapes used in utils.ts and ClubCrest.tsx
+  shape: 'SHIELD' | 'CIRCLE' | 'DIAMOND' | 'HEXAGON' | 'SQUARE';
   symbol: string;
+}
+
+export interface ScoutedPlayer {
+  name: string;
+  pos: string;
+  age: number;
+  reason: string;
+  estimatedValue: number;
+}
+
+export interface Scout {
+  id: string;
+  name: string;
+  level: number; // 1-5 estrellas
+  specialty: 'JÓVENES' | 'TÁCTICO' | 'ESTRELLAS';
+  weeklySalary: number;
+  hireCost: number;
+  avatar: string;
+  assignment?: {
+    text: string;
+    players: ScoutedPlayer[];
+  };
 }
 
 export interface Team {
@@ -83,6 +107,7 @@ export interface Team {
   formation: string;
   lineup: Record<string, string | null>; 
   crest: CrestData;
+  activeScoutId?: string;
 }
 
 export interface Match {
@@ -113,6 +138,7 @@ export interface LeagueState {
   pendingAuctions: string[];
   history: SeasonRecord[]; 
   offers: Offer[];
+  scoutMarket: Scout[];
 }
 
 export interface Offer {

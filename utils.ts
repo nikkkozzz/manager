@@ -1,4 +1,3 @@
-
 import { FIRSTNAMES, SURNAMES } from './constants';
 import { Player, Position, Team, Match, CrestData, PlayerStatChanges, Personality } from './types';
 
@@ -12,12 +11,18 @@ const ROLE_POOL: Record<Position, string[]> = {
 const PERSONALITIES: Personality[] = ['LEAL', 'AMBICIOSO', 'REBELDE', 'PROFESIONAL'];
 
 const TEAM_COLORS = [
-  '#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#ffffff', '#18181b', '#06b6d4', '#f97316'
+  '#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#ffffff', '#09090b', '#06b6d4', '#f97316',
+  '#a855f7', '#14b8a6', '#6366f1', '#84cc16', '#dc2626', '#1d4ed8', '#047857', '#b45309', '#be185d', '#0f172a'
 ];
 
-const PATTERNS: CrestData['pattern'][] = ['STRIPES', 'DIAGONAL', 'CROSS', 'PLAIN', 'CHEVRON'];
-const SHAPES: CrestData['shape'][] = ['SHIELD', 'CIRCLE', 'DIAMOND'];
-const SYMBOLS = ['⚽', '🛡️', '🦁', '🦅', '🔥', '⭐', '👑', '⚡', '🐉', '🐺'];
+const PATTERNS: CrestData['pattern'][] = ['STRIPES', 'DIAGONAL', 'CROSS', 'PLAIN', 'CHEVRON', 'CHECKERED', 'STARS'];
+const SHAPES: CrestData['shape'][] = ['SHIELD', 'CIRCLE', 'DIAMOND', 'HEXAGON', 'SQUARE'];
+const SYMBOLS = [
+  '⚽', '🛡️', '🦁', '🦅', '🔥', '⭐', '👑', '⚡', '🐉', '🐺', 
+  '🐘', '🐃', '🦈', '🐅', '🐆', '🏹', '⚔️', '⚓', '🏔️', '🌋', 
+  '🌙', '☀️', '☘️', '🌹', '⚜️', '💎', '🧤', '🏆', '👟', '📢', 
+  '🪐', '🌀', '🔱', '⛩️', '🎡', '🏰', '🗿', '🎭', '🎨', '🛸'
+];
 
 export const calculateTSI = (p: Pick<Player, 'h_porteria' | 'h_defensa' | 'h_jugadas' | 'h_anotacion' | 'age'>): number => {
   const suma = (p.h_porteria * 3) + p.h_defensa + p.h_jugadas + p.h_anotacion;
@@ -30,10 +35,6 @@ export const calculateTeamPrestige = (team: Team): number => {
   return Math.min(100, basePrestige + performanceBonus);
 };
 
-// Fix: Implement evaluateProjectSuitability to handle bidding logic in AuctionHouse
-/**
- * Calculates how suitable a project is for a player based on bid amount, team prestige and player ambition.
- */
 export const evaluateProjectSuitability = (amount: number, playerValue: number, prestige: number, ambition: number): number => {
   const moneyRatio = amount / (playerValue || 1);
   const moneyScore = Math.min(100, moneyRatio * 50); 
@@ -97,9 +98,19 @@ export const generatePlayer = (division: number, free: boolean = false, teamName
   return p;
 };
 
+const getUniqueHash = (str: string) => {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = (h << 5) - h + str.charCodeAt(i);
+    h |= 0;
+  }
+  return Math.abs(h);
+};
+
 export const createTeam = (name: string, division: number, isUser: boolean = false): Team => {
   const squad = Array.from({ length: 18 }, () => generatePlayer(division, false, name));
-  const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const h = getUniqueHash(name);
+  
   const team: Team = {
     id: Math.random().toString(36).substr(2, 9),
     name,
@@ -115,24 +126,21 @@ export const createTeam = (name: string, division: number, isUser: boolean = fal
     formation: '4-4-2',
     lineup: {},
     crest: {
-      primaryColor: TEAM_COLORS[hash % TEAM_COLORS.length],
-      secondaryColor: TEAM_COLORS[(hash + 3) % TEAM_COLORS.length],
-      pattern: PATTERNS[hash % PATTERNS.length],
-      shape: SHAPES[hash % SHAPES.length],
-      symbol: SYMBOLS[hash % SYMBOLS.length]
+      primaryColor: TEAM_COLORS[h % TEAM_COLORS.length],
+      secondaryColor: TEAM_COLORS[(h * 7) % TEAM_COLORS.length],
+      pattern: PATTERNS[(h * 13) % PATTERNS.length],
+      shape: SHAPES[(h * 17) % SHAPES.length],
+      symbol: SYMBOLS[(h * 31) % SYMBOLS.length]
     }
   };
 
-  // Only auto-fill lineup for AI teams. User starts with empty tactics board.
   if (!isUser) {
     const sorted = [...squad].sort((a, b) => b.tsi - a.tsi);
-    
     const starterPositions = ["POR", "LTI", "DCI", "DCD", "LTD", "EIZ", "MCI", "MCD", "EDE", "DI", "DD"];
     starterPositions.forEach((pos, i) => {
         team.lineup[pos] = sorted[i].id;
         sorted[i].currentRole = pos;
     });
-
     for (let i = 11; i < 18; i++) {
         const subPos = `S${i - 10}`;
         team.lineup[subPos] = sorted[i].id;
